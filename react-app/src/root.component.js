@@ -3,7 +3,8 @@ export default function Root(props) {
     <section>
       {props.name} is mounted!
       <br />
-      <a href="/angular">Go To Angular App</a>
+      <a href="/react">On angular shell, react is mounted</a>
+      <br />
       <a href="/dashboard">Go To Angular App</a>
     </section>
   );
