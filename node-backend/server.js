@@ -3,8 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = 3000;
 
-// Enable CORS for all routes
-app.use(cors()); // This will allow all origins by default
+
 
 // You can also enable CORS for a specific origin like:
 app.use(cors({
