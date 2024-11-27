@@ -13,6 +13,6 @@ cd react-app && npm run start &
 
 # Start Node.js Backend
 echo "Starting Node.js backend..."
-cd node-backend && node server.js & 
+cd node-backend && nodemon server.js & 
 
 wait
