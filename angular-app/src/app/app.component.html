@@ -1,1 +1,30 @@
-<h1>{{message}}</h1>
+<h1>{{ message }}</h1>
+
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+  <mat-form-field appearance="fill">
+    <mat-label>First Name</mat-label>
+    <input
+      matInput
+      formControlName="firstName"
+      placeholder="Enter your first name"
+    />
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Last Name</mat-label>
+    <input
+      matInput
+      formControlName="lastName"
+      placeholder="Enter your last name"
+    />
+  </mat-form-field>
+
+  <button
+    mat-raised-button
+    color="primary"
+    type="submit"
+    [disabled]="loginForm.invalid"
+  >
+    Submit
+  </button>
+</form>
