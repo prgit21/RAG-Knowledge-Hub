@@ -13,4 +13,8 @@ export class ApiService {
   getHelloMessage(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/hello`);
   }
+  postLogin(username: string, password: string): Observable<any> {
+    const loginData = { username, password };
+    return this.http.post<any>(`${this.apiUrl}/login`, loginData);
+  }
 }
