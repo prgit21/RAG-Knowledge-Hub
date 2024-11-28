@@ -45,6 +45,9 @@ export class AppComponent implements OnInit {
       this.apiService.postLogin(firstName, lastName).subscribe({
         next: (response) => {
           console.log('Login successful:', response); /// TODO: redirect to react/some other APP
+          if (response.token) {
+            localStorage.setItem('authToken', response.token);
+          }
         },
         error: (error) => {
           console.error('Login failed:', error);

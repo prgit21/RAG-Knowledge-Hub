@@ -70,6 +70,7 @@ app.post("/api/login", async (req, res) => {
   }
 
   const token = generateToken(user);
+  const empty = "";
 
   res.json({ token });
 });
