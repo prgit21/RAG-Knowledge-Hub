@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { ApiService } from './api.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
@@ -20,7 +20,7 @@ export class AppComponent implements OnInit {
         Validators.required,
         Validators.minLength(3),
       ]),
-      lastName: new FormControl('', [
+      password: new FormControl('', [
         Validators.required,
         Validators.minLength(3),
       ]),
@@ -40,9 +40,9 @@ export class AppComponent implements OnInit {
   }
   onSubmit(): void {
     if (this.loginForm.valid) {
-      const { firstName, lastName } = this.loginForm.value;
+      const { firstName, password } = this.loginForm.value;
 
-      this.apiService.postLogin(firstName, lastName).subscribe({
+      this.apiService.postLogin(firstName, password).subscribe({
         next: (response) => {
           console.log('Login successful:', response); /// TODO: redirect to react/some other APP
           if (response.token) {

@@ -17,6 +17,6 @@ cd react-app && npm run start &
 
 # Start Node.js Backend in dev mode
 echo "Starting Node.js backend..."
-cd node-backend && nodemon --inspect server.js & 
+# cd node-backend && nodemon --inspect server.js & 
 
 wait

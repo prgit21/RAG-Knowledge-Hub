@@ -1,20 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
+// const argon2 = require("argon2");
 const dotenv = require("dotenv");
+
 const app = express();
 const port = 3000;
 dotenv.config();
-
-/// TODO Mock database , create actual DB
-const users = [
-  {
-    id: 1,
-    username: "user",
-    password: "$2a$10$N1Lz0xX2ZTgtsKp2t03/iM9km11qtmYgHih6/0nI/jTpYaE.mJAXm", // bcrypt hash of 'password123'
-  },
-];
 
 // Enable CORS
 app.use(
@@ -23,61 +15,78 @@ app.use(
   })
 );
 
-// Middleware to parse JSON request body
 app.use(express.json());
-
-function generateToken(user) {
-  return jwt.sign(
-    { id: user.id, username: user.username },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
-  );
-}
-
-// Middleware to authenticate JWT token
-function authenticateToken(req, res, next) {
-  const token = req.header("Authorization")?.replace("Bearer ", "");
-
-  if (!token) {
-    return res.status(401).json({ message: "Access denied, token missing." });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: "Invalid or expired token." });
-    }
-    req.user = user;
-    next();
-  });
-}
 
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from the Node.js backend!" });
 });
-
-// Login route to authenticate users and issue JWT token
 app.post("/api/login", async (req, res) => {
+  // TODO Mock database, create actual DB
+  const users = [
+    {
+      id: 1,
+      username: "user",
+      pwd: "", // bcrypt hash for "pwd123"
+    },
+
+    {
+      id: 4,
+      username: "guest",
+      pwd: "$2b$10$k3Zpt8Qgz6OKyC.DdPJG5C7GT9i/mbESM8P2zmd7mX1aF8r7vUwCa", // bcrypt hash for "guest123"
+    },
+  ];
+
   const { username, password } = req.body;
+  const matchedUser = users.find((user) => user.username === username);
 
-  const user = users.find((u) => u.username === username); //parse user
-  if (!user) {
-    return res.status(401).json({ message: "Invalid credentials." });
+  if (!matchedUser) {
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(401).json({ message: "Invalid credentials." });
-  }
+  /// implement argon2  here
+  // 1. Hash argon 2 pwd and store in mockDB,
+  // argon2 implementation
+  // Verify the password
+  // async function verifyPassword(storedHash, inputPassword) {
+  //   try {
+  //     const isMatch = await argon2.verify(storedHash, inputPassword);
+  //     return isMatch; // true or false
+  //   } catch (err) {
+  //     console.error('Error verifying password:', err);
+  //     throw err;
+  //   }
+  // }
 
-  const token = generateToken(user);
-  const empty = "";
+  // // Example usage
+  // const inputPassword = "userEnteredPassword";
+  // const storedHash = "<the-hashed-password-from-database>";
 
-  res.json({ token });
+  // const isMatch = await verifyPassword(storedHash, inputPassword);
+
+  // if (isMatch) {
+  //   console.log('Login successful');
+  // } else {
+  //   console.log('Incorrect password');
+  // }
 });
 
-// Protected route that requires authentication (using the JWT token)
-app.get("/api/protected", authenticateToken, (req, res) => {
-  res.json({ message: "This is a protected route.", user: req.user });
+const verifyToken = (req, res, next) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!token) {
+    return res.status(403).json({ message: "Access denied, token missing" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+app.get("/protected", verifyToken, (req, res) => {
+  res.json({ message: "This is protected data", user: req.user });
 });
 
 app.listen(port, () => {
