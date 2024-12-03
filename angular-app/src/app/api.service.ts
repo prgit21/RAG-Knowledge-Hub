@@ -13,6 +13,10 @@ export class ApiService {
   getHelloMessage(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/hello`);
   }
+
+  getProtectedData(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/protected`);
+  }
   postLogin(username: string, password: string): Observable<any> {
     const loginData = { username, password };
     const headers = new HttpHeaders({

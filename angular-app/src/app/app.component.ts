@@ -47,6 +47,7 @@ export class AppComponent implements OnInit {
           console.log('Login successful:', response); /// TODO: redirect to react/some other APP
           if (response.token) {
             localStorage.setItem('authToken', response.token);
+            // this.getProtectedData();
           }
         },
         error: (error) => {
@@ -58,5 +59,11 @@ export class AppComponent implements OnInit {
       console.log('Form is invalid');
       /// TODO : Show Form Invalid/dirty error
     }
+  }
+  getProtectedData() {
+    //check if token needs to be passed from localstorage to use protected datas
+    this.apiService.getProtectedData().subscribe((datum) => {
+      console.log('this is protected data : ', datum);
+    });
   }
 }

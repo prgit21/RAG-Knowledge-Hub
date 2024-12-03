@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-// const argon2 = require("argon2");
+const argon2 = require("argon2");
 const dotenv = require("dotenv");
 
 const app = express();
@@ -20,22 +20,36 @@ app.use(express.json());
 app.get("/api/hello", (req, res) => {
   res.json({ message: "Hello from the Node.js backend!" });
 });
+
+/// TODO create prod db
+const users = [
+  {
+    id: 1,
+    username: "testuser",
+    password: "",
+  },
+  {
+    id: 1,
+    username: "some-user",
+    password: "",
+  },
+];
+//method to hash pwd into DB
+async function hashPassword(password) {
+  try {
+    const hashedpwd = await argon2.hash(password);
+    return hashedpwd;
+  } catch (err) {
+    console.error("Error hashing password:", err);
+    throw err;
+  }
+}
+(async () => {
+  users[0].password = await hashPassword("pwd123"); //hardcoded for now cus only one user, will replace when signup feature is added
+  users[1].password = await hashPassword("somepwd");
+})();
+
 app.post("/api/login", async (req, res) => {
-  // TODO Mock database, create actual DB
-  const users = [
-    {
-      id: 1,
-      username: "user",
-      pwd: "", // bcrypt hash for "pwd123"
-    },
-
-    {
-      id: 4,
-      username: "guest",
-      pwd: "$2b$10$k3Zpt8Qgz6OKyC.DdPJG5C7GT9i/mbESM8P2zmd7mX1aF8r7vUwCa", // bcrypt hash for "guest123"
-    },
-  ];
-
   const { username, password } = req.body;
   const matchedUser = users.find((user) => user.username === username);
 
@@ -43,31 +57,18 @@ app.post("/api/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  /// implement argon2  here
-  // 1. Hash argon 2 pwd and store in mockDB,
-  // argon2 implementation
-  // Verify the password
-  // async function verifyPassword(storedHash, inputPassword) {
-  //   try {
-  //     const isMatch = await argon2.verify(storedHash, inputPassword);
-  //     return isMatch; // true or false
-  //   } catch (err) {
-  //     console.error('Error verifying password:', err);
-  //     throw err;
-  //   }
-  // }
+  const isPasswordValid = await argon2.verify(matchedUser.password, password);
 
-  // // Example usage
-  // const inputPassword = "userEnteredPassword";
-  // const storedHash = "<the-hashed-password-from-database>";
+  if (!isPasswordValid) {
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+  const token = jwt.sign(
+    { id: matchedUser.id, username: matchedUser.username },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
 
-  // const isMatch = await verifyPassword(storedHash, inputPassword);
-
-  // if (isMatch) {
-  //   console.log('Login successful');
-  // } else {
-  //   console.log('Incorrect password');
-  // }
+  res.json({ message: "Login successful", token });
 });
 
 const verifyToken = (req, res, next) => {
@@ -85,7 +86,7 @@ const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
-app.get("/protected", verifyToken, (req, res) => {
+app.get("/api/protected", verifyToken, (req, res) => {
   res.json({ message: "This is protected data", user: req.user });
 });
 
