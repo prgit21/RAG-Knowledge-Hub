@@ -17,10 +17,6 @@ app.use(
 
 app.use(express.json());
 
-app.get("/api/hello", (req, res) => {
-  res.json({ message: "Hello from the Node.js backend!" });
-});
-
 /// TODO create prod db
 const users = [
   {
@@ -34,6 +30,23 @@ const users = [
     password: "",
   },
 ];
+// common methods
+const verifyToken = (req, res, next) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!token) {
+    return res.status(403).json({ message: "Access denied, token missing" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
 //method to hash pwd into DB
 async function hashPassword(password) {
   try {
@@ -45,9 +58,15 @@ async function hashPassword(password) {
   }
 }
 (async () => {
-  users[0].password = await hashPassword("pwd123"); //hardcoded for now cus only one user, will replace when signup feature is added
+  users[0].password = await hashPassword("pwd123"); /// TODO hardcoded for now  replace when signup feature is added
   users[1].password = await hashPassword("somepwd");
 })();
+
+// Endpoints
+
+app.get("/api/hello", (req, res) => {
+  res.json({ message: "Hello from the Node.js backend!" });
+});
 
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
@@ -71,21 +90,6 @@ app.post("/api/login", async (req, res) => {
   res.json({ message: "Login successful", token });
 });
 
-const verifyToken = (req, res, next) => {
-  const token = req.header("Authorization")?.replace("Bearer ", "");
-
-  if (!token) {
-    return res.status(403).json({ message: "Access denied, token missing" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: "Invalid or expired token" });
-  }
-};
 app.get("/api/protected", verifyToken, (req, res) => {
   res.json({ message: "This is protected data", user: req.user });
 });
