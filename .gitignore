@@ -73,3 +73,7 @@ dist
 
 #env secrets
 .env
+
+# Python caches
+__pycache__/
+*.py[cod]
