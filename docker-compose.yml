@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  root-config:
+    build: .
+    ports:
+      - "9000:80"
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "8080:80"
+  react-app:
+    build: ./react-app
+    ports:
+      - "8081:80"
+  angular-app:
+    build: ./angular-app
+    ports:
+      - "8082:80"
+  python-backend:
+    build: ./python-backend
+    ports:
+      - "8000:8000"
