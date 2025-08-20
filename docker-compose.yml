@@ -7,16 +7,16 @@ services:
   dashboard:
     build: ./dashboard
     ports:
-      - "8080:80"
+      - "4200:80"
   react-app:
     build: ./react-app
     ports:
-      - "8081:80"
+      - "8080:80"
   angular-app:
     build: ./angular-app
     ports:
-      - "8082:80"
+      - "4201:80"
   python-backend:
     build: ./python-backend
     ports:
-      - "8000:8000"
+      - "3000:3000"
