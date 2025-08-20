@@ -1,5 +1,9 @@
-version: '3.8'
+
 services:
+  root-config:
+    build: .
+    ports:
+      - "9000:9000"
   dashboard:
     build: ./dashboard
     ports:
