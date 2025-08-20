@@ -15,8 +15,8 @@ cd react-app && npm run start &
 # echo "Starting Node.js backend..."
 cd node-backend && nodemon server.js & 
 
-#start python backend
-# echo "Starting FastAPI backend..."
-# cd python-backend && uvicorn app.main:app --reload --port 3000 &
+# Start python backend
+echo "Starting FastAPI backend..."
+cd python-backend && uvicorn app.main:app --reload --port 3000 &
 
 wait
