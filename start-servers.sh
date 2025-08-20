@@ -2,7 +2,7 @@
 
 # Start root-config shell
 echo "Starting root-config ..."
-npm run start &
+npm run start:local &
 
 # Starting Angular MFE's
 (cd dashboard && npm run serve:single-spa:dashboard) &
