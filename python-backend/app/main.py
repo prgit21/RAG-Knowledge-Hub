@@ -11,7 +11,7 @@ import os
 
 # Load environment variables
 load_dotenv()
-JWT_SECRET = os.getenv("JWT_SECRET", "changeme")
+JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
