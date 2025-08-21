@@ -4,6 +4,16 @@ services:
     build: .
     ports:
       - "9000:9000"
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
   dashboard:
     build: ./dashboard
     ports:
@@ -20,3 +30,10 @@ services:
     build: ./python-backend
     ports:
       - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
+    depends_on:
+      - db
+
+volumes:
+  db_data:
