@@ -140,7 +140,7 @@
             "scripts": [],
             "customWebpackConfig": {
               "path": "extra-webpack.config.js",
-              "libraryName": "angular-app",
+              "libraryName": "login",
               "libraryTarget": "umd"
             },
             "deployUrl": "http://localhost:4200/"

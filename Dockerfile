@@ -5,9 +5,8 @@ RUN npm ci
 COPY . .
 # RUN npm run build
 
-RUN npm run build:webpack -- --env isLocal \
+RUN npm run build:webpack \
     && npm run build:types
-
 FROM node:18-slim
 WORKDIR /app
 RUN npm i -g serve

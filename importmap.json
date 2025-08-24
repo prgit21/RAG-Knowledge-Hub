@@ -1,0 +1,8 @@
+ {
+  "imports": {
+    "@app/root-config": "//root-config/app-root-config.js",
+    "login": "//angular-app/main.js",
+    "dashboard-app": "//dashboard/main.js",
+    "@react-app/react-app": "//react-app/react-app-react-app.js"
+  }
+}
