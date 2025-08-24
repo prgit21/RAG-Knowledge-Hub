@@ -1,0 +1,21 @@
+services:
+  root-config:
+    build: .
+    ports: ["9000:9000"]
+
+  angular-app:
+    build: ./angular-app
+    ports: ["4201:80"]
+
+  dashboard:
+    build: ./dashboard
+    ports: ["4200:80"]
+
+  react-app:
+    build: ./react-app
+    ports: ["8080:80"]
+
+  backend:
+    build: ./python-backend
+    env_file: ./python-backend/app/.env   
+    ports: ["8000:8000"]
