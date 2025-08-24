@@ -10,5 +10,5 @@ RUN npm run build:single-spa:angular-app
 FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 COPY --from=build /app/dist/angular-app-single/ /usr/share/nginx/html/
-EXPOSE 4201
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

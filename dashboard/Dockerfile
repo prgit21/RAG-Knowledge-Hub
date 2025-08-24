@@ -10,5 +10,5 @@ RUN npm run build:single-spa:dashboard
 FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 COPY --from=build /app/dist/dashboard/ /usr/share/nginx/html/
-EXPOSE 4200
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
