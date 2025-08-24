@@ -11,5 +11,6 @@ FROM node:18-slim
 WORKDIR /app
 RUN npm i -g serve
 COPY --from=build /app/dist ./dist
+COPY importmap.json dist/importmap.json
 EXPOSE 9000
 CMD ["serve", "-s", "dist", "-l", "9000"]
