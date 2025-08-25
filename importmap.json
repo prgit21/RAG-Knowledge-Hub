@@ -1,6 +1,6 @@
  {
   "imports": {
-    "@app/root-config": "//root-config/app-root-config.js",
+    "@app/root-config": "//localhost:9000/app-root-config.js",
     "login": "http://localhost:4201/main.js",
     "dashboard-app": "http://localhost:4200/main.js",
     "@react-app/react-app": "http://localhost:8080/react-app-react-app.js"
