@@ -13,6 +13,6 @@ cd react-app && npm run start &
 
 # Start python backend
 echo "Starting FastAPI backend..."
-cd python-backend && uvicorn app.main:app --reload --port 3000 &
+cd python-backend && uvicorn app.main:app --reload --port 8000 &
 
 wait
