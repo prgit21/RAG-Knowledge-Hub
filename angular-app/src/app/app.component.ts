@@ -3,6 +3,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { ApiService } from './api.service';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { navigateToUrl } from 'single-spa';
 
 @Component({
   selector: 'app-root',
@@ -44,11 +45,10 @@ export class AppComponent implements OnInit {
 
       this.apiService.postLogin(firstName, password).subscribe({
         next: (response) => {
-          console.log('Login successful:', response); /// TODO: redirect to react/some other APP
-          if (response.token) {
-            localStorage.setItem('authToken', response.token);
-            // this.getProtectedData();
-          }
+          if (response.access_token) {
+      localStorage.setItem('authToken', response.token);
+      navigateToUrl('/react');   // Redirect to the React parcel
+    }
         },
         error: (error) => {
           console.error('Login failed:', error);

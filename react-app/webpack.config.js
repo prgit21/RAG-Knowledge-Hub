@@ -15,6 +15,7 @@ module.exports = (webpackConfigEnv, argv) => {
         "Access-Control-Allow-Origin": "*",
       },
     },
+    devtool: "source-map",
     // modify the webpack config however you'd like to by adding to this object
   });
 };
