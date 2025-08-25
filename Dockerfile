@@ -14,3 +14,6 @@ COPY --from=build /app/dist ./dist
 COPY importmap.json dist/importmap.json
 EXPOSE 9000
 CMD ["serve", "-s", "dist", "-l", "9000"]
+
+
+#change port to 8000 before building the docker image 
