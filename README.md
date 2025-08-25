@@ -78,9 +78,8 @@ A platform for uploading and querying academic or reference materials conversati
   * root: 9000
   * login: 4201
   * dashboard: 4200
-  * ask: 3001
-  * admin: 3002
-  * backend: 8000
+  * ask: 8001
+  * admin: 8002
   * postgres: 5432
   * redis: 6379
   * minio: 9000 (console 9001)
