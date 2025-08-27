@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,7 +7,12 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 import os
+
+from .database import SessionLocal
+from .models import Document, Embedding
 
 # Load environment variables
 load_dotenv()
@@ -33,13 +38,9 @@ app.add_middleware(
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-# In-memory user "database"
-fake_user_db = {
-    "user": {
-        "username": "user",
-        "hashed_password": pwd_context.hash("password"),
-    }
-}
+DEFAULT_USERNAME = os.getenv("DEFAULT_USERNAME", "user")
+DEFAULT_PASSWORD = os.getenv("DEFAULT_PASSWORD", "password")
+DEFAULT_PASSWORD_HASH = pwd_context.hash(DEFAULT_PASSWORD)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
@@ -49,13 +50,20 @@ async def read_hello():
     return {"message": "Hello from FastAPI"}
 
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 def authenticate_user(username: str, password: str):
-    user = fake_user_db.get(username)
-    if not user:
+    if username != DEFAULT_USERNAME:
         return None
-    if not pwd_context.verify(password, user["hashed_password"]):
+    if not pwd_context.verify(password, DEFAULT_PASSWORD_HASH):
         return None
-    return user
+    return {"username": username}
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -87,3 +95,53 @@ async def protected_route(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
     return {"message": f"Hello, {username}"}
+
+
+class DocumentCreate(BaseModel):
+    content: str
+    embedding: List[float]
+
+
+class DocumentResponse(BaseModel):
+    id: int
+    content: str
+
+    class Config:
+        orm_mode = True
+
+
+class SearchRequest(BaseModel):
+    embedding: List[float]
+    limit: int = 5
+
+
+@app.post("/api/documents", response_model=DocumentResponse)
+def create_document(doc: DocumentCreate, db: Session = Depends(get_db)):
+    document = Document(content=doc.content)
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    embedding = Embedding(document_id=document.id, vector=doc.embedding)
+    db.add(embedding)
+    db.commit()
+    return document
+
+
+@app.get("/api/documents/{doc_id}", response_model=DocumentResponse)
+def read_document(doc_id: int, db: Session = Depends(get_db)):
+    document = db.query(Document).filter(Document.id == doc_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return document
+
+
+@app.post("/api/search")
+def search_documents(req: SearchRequest, db: Session = Depends(get_db)):
+    results = (
+        db.query(Document)
+        .join(Embedding)
+        .order_by(Embedding.vector.l2_distance(req.embedding))
+        .limit(req.limit)
+        .all()
+    )
+    return {"results": [{"id": d.id, "content": d.content} for d in results]}
