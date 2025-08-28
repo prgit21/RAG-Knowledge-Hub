@@ -14,12 +14,13 @@ import os
 # Load environment variables
 load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
+DATABASE_URL = os.getenv("DATABASE_URL")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 # Database setup
 DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
