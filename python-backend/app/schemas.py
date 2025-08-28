@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel
 
 
@@ -20,6 +22,14 @@ class UserCreate(UserBase):
 
 class UserOut(UserBase):
     id: int
+
+    class Config:
+        orm_mode = True
+
+
+class EmbeddingOut(BaseModel):
+    id: int
+    embedding: List[float]
 
     class Config:
         orm_mode = True

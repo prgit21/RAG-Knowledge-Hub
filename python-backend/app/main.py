@@ -12,7 +12,7 @@ import os
 
 from .db import Base, engine, SessionLocal, get_db
 from .models import Embedding, User
-from .schemas import Token
+from .schemas import Token, EmbeddingOut
 
 # Load environment variables
 load_dotenv()
@@ -100,17 +100,17 @@ async def protected_route(token: str = Depends(oauth2_scheme)):
     return {"message": f"Hello, {username}"}
 
 
-@app.post("/api/embeddings/demo")
+@app.post("/api/embeddings/demo", response_model=EmbeddingOut)
 def create_demo_embedding(db: Session = Depends(get_db)):
     vector = [0.1, 0.2, 0.3]
     embedding = Embedding(embedding=vector)
     db.add(embedding)
     db.commit()
     db.refresh(embedding)
-    return {"id": embedding.id, "embedding": embedding.embedding}
+    return {"id": embedding.id, "embedding": list(embedding.embedding)}
 
 
-@app.get("/api/embeddings/demo")
+@app.get("/api/embeddings/demo", response_model=List[EmbeddingOut])
 def list_embeddings(
     vector: List[float] = Query(...), db: Session = Depends(get_db)
 ):
@@ -119,4 +119,4 @@ def list_embeddings(
         .order_by(Embedding.embedding.cosine_distance(vector))
         .all()
     )
-    return [{"id": e.id, "embedding": e.embedding} for e in results]
+    return [{"id": e.id, "embedding": list(e.embedding)} for e in results]
