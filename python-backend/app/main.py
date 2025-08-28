@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 import os
 
 from .db import Base, engine, SessionLocal, get_db
-from .models import User
+from .models import Embedding, User
 from .schemas import Token
 
 # Load environment variables
@@ -98,3 +98,25 @@ async def protected_route(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
     return {"message": f"Hello, {username}"}
+
+
+@app.post("/api/embeddings/demo")
+def create_demo_embedding(db: Session = Depends(get_db)):
+    vector = [0.1, 0.2, 0.3]
+    embedding = Embedding(embedding=vector)
+    db.add(embedding)
+    db.commit()
+    db.refresh(embedding)
+    return {"id": embedding.id, "embedding": embedding.embedding}
+
+
+@app.get("/api/embeddings/demo")
+def list_embeddings(
+    vector: List[float] = Query(...), db: Session = Depends(get_db)
+):
+    results = (
+        db.query(Embedding)
+        .order_by(Embedding.embedding.cosine_distance(vector))
+        .all()
+    )
+    return [{"id": e.id, "embedding": e.embedding} for e in results]
