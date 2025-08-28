@@ -7,38 +7,18 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
-from sqlalchemy import Column, Integer, String, create_engine
-from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy.orm import Session
 import os
+
+from .db import Base, engine, SessionLocal, get_db
+from .models import User
+from .schemas import Token
 
 # Load environment variables
 load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
-DATABASE_URL = os.getenv("DATABASE_URL")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-# Database setup
-DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL, echo=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 app = FastAPI()
@@ -93,7 +73,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
 
 
-@app.post("/api/login")
+@app.post("/api/login", response_model=Token)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
