@@ -62,7 +62,7 @@ A platform for uploading and querying academic or reference materials conversati
 ### Install dependencies
 
 * **Frontends**: `npm install` at the root and inside each MF (`angular-app`, `dashboard`, `react-app`, `ask-app`, `admin-app`).
-* **Backend**: `pip install -r requirements.txt` in `python-backend`, configure `.env` with JWT + DB/Redis/MinIO credentials.
+* **Backend**: `pip install -r requirements.txt` in `python-backend`, configure `.env` with JWT + DB/Redis/MinIO credentials (copy from `python-backend/app/.env.example`).
 
 ### Run locally
 
@@ -83,6 +83,18 @@ A platform for uploading and querying academic or reference materials conversati
   * postgres: 5432
   * redis: 6379
   * minio: 9000 (console 9001)
+
+### MinIO demo
+
+1. Start the stack with `docker-compose up --build`.
+2. Open the MinIO console at [http://localhost:9001](http://localhost:9001) (user/secret `minioadmin`/`minioadmin`).
+3. Upload a file through the FastAPI backend:
+
+   ```bash
+   curl -X POST -F "file=@README.md" http://localhost:8000/api/upload
+   ```
+
+   The file will appear in the `documents` bucket inside the MinIO console.
 
 ---
 

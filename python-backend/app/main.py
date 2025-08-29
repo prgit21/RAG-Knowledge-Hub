@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -9,6 +9,8 @@ from passlib.context import CryptContext
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 import os
+import io
+from minio import Minio
 
 from .db import Base, engine, SessionLocal, get_db
 from .models import Embedding, User
@@ -19,6 +21,18 @@ load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET", "documents")
+
+minio_client = Minio(
+    MINIO_ENDPOINT,
+    access_key=MINIO_ACCESS_KEY,
+    secret_key=MINIO_SECRET_KEY,
+    secure=False,
+)
 
 
 app = FastAPI()
@@ -50,6 +64,8 @@ def on_startup():
         db.add(User(username="user", hashed_password=pwd_context.hash("password")))
         db.commit()
     db.close()
+    if not minio_client.bucket_exists(MINIO_BUCKET):
+        minio_client.make_bucket(MINIO_BUCKET)
 
 
 @app.get("/api/hello")
@@ -120,3 +136,16 @@ def list_embeddings(
         .all()
     )
     return [{"id": e.id, "embedding": list(e.embedding)} for e in results]
+
+
+@app.post("/api/upload")
+async def upload_file(file: UploadFile = File(...)):
+    data = await file.read()
+    minio_client.put_object(
+        MINIO_BUCKET,
+        file.filename,
+        io.BytesIO(data),
+        length=len(data),
+        content_type=file.content_type,
+    )
+    return {"filename": file.filename}
