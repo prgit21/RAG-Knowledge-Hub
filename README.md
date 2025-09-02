@@ -82,7 +82,23 @@ A platform for uploading and querying academic or reference materials conversati
   * admin: 8002
   * postgres: 5432
   * redis: 6379
-  * minio: 9000 (console 9001)
+  * minio: 9001 (console 9002)
+
+---
+
+### MinIO example
+
+An example script demonstrating basic interaction with MinIO is provided at
+`python-backend/examples/minio_example.py`. After starting the services with
+Docker Compose, run:
+
+```bash
+pip install -r python-backend/requirements.txt
+python python-backend/examples/minio_example.py
+```
+
+The script connects to `localhost:9001`, creates a bucket, uploads a file, and
+prints its contents.
 
 ---
 
