@@ -30,7 +30,16 @@ class UserOut(UserBase):
 class EmbeddingOut(BaseModel):
     id: int
     embedding: List[float]
+    content: str | None = None
 
     class Config:
         orm_mode = True
+
+
+class AskRequest(BaseModel):
+    question: str
+
+
+class AskResponse(BaseModel):
+    answer: str
 

@@ -15,5 +15,6 @@ class Embedding(Base):
     __tablename__ = "embeddings"
 
     id = Column(Integer, primary_key=True, index=True)
+    content = Column(String, nullable=True)
     embedding = Column(Vector(3))
 

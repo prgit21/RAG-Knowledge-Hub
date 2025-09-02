@@ -9,10 +9,11 @@ from passlib.context import CryptContext
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 import os
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 from .db import Base, engine, SessionLocal, get_db
 from .models import Embedding, User
-from .schemas import Token, EmbeddingOut
+from .schemas import Token, EmbeddingOut, AskRequest, AskResponse
 
 # Load environment variables
 load_dotenv()
@@ -103,11 +104,11 @@ async def protected_route(token: str = Depends(oauth2_scheme)):
 @app.post("/api/embeddings/demo", response_model=EmbeddingOut)
 def create_demo_embedding(db: Session = Depends(get_db)):
     vector = [0.1, 0.2, 0.3]
-    embedding = Embedding(embedding=vector)
+    embedding = Embedding(embedding=vector, content="demo content")
     db.add(embedding)
     db.commit()
     db.refresh(embedding)
-    return {"id": embedding.id, "embedding": list(embedding.embedding)}
+    return {"id": embedding.id, "embedding": list(embedding.embedding), "content": embedding.content}
 
 
 @app.get("/api/embeddings/demo", response_model=List[EmbeddingOut])
@@ -119,4 +120,27 @@ def list_embeddings(
         .order_by(Embedding.embedding.cosine_distance(vector))
         .all()
     )
-    return [{"id": e.id, "embedding": list(e.embedding)} for e in results]
+    return [
+        {"id": e.id, "embedding": list(e.embedding), "content": e.content}
+        for e in results
+    ]
+
+
+@app.post("/api/ask", response_model=AskResponse)
+def ask_question(request: AskRequest, db: Session = Depends(get_db)):
+    embedding_model = OpenAIEmbeddings()
+    query_vector = embedding_model.embed_query(request.question)
+    results = (
+        db.query(Embedding)
+        .order_by(Embedding.embedding.cosine_distance(query_vector))
+        .limit(5)
+        .all()
+    )
+    context = "\n".join([r.content for r in results if r.content])
+    llm = ChatOpenAI(temperature=0)
+    prompt = (
+        f"Use the following context to answer the question.\n"
+        f"Context:\n{context}\n\nQuestion: {request.question}"
+    )
+    answer = llm.predict(prompt)
+    return {"answer": answer}
