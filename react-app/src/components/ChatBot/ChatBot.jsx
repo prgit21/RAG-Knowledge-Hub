@@ -1,7 +1,7 @@
 import { useState } from "react";
+import { Box, Stack, Paper, List } from "@mui/material";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
-import "./ChatBot.css";
 
 export default function ChatBot() {
   const [messages, setMessages] = useState([]);
@@ -16,18 +16,26 @@ export default function ChatBot() {
       role: "bot",
       text: "This is a not a demo response.",
     };
-    debugger
     setMessages((prev) => [...prev, userMessage, botMessage]);
   };
 
   return (
-    <div className="chatbot-container">
-      <div className="chatbot-messages">
-        {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg} />
-        ))}
-      </div>
-      <ChatInput onSend={handleSend} />
-    </div>
+    <Box
+      component={Paper}
+      sx={{
+        height: 400,
+        border: 1,
+        borderColor: "divider",
+      }}
+    >
+      <Stack sx={{ height: "100%" }}>
+        <List sx={{ flexGrow: 1, overflowY: "auto", p: 1 }}>
+          {messages.map((msg) => (
+            <ChatMessage key={msg.id} message={msg} />
+          ))}
+        </List>
+        <ChatInput onSend={handleSend} />
+      </Stack>
+    </Box>
   );
 }

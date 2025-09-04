@@ -1,5 +1,6 @@
 import { useState } from "react";
-import Button from "@mui/material/Button";
+import { Box, TextField, IconButton } from "@mui/material";
+import SendIcon from "@mui/icons-material/Send";
 
 export default function ChatInput({ onSend }) {
   const [text, setText] = useState("");
@@ -11,16 +12,20 @@ export default function ChatInput({ onSend }) {
   };
 
   return (
-    <form className="chatbot-input" onSubmit={handleSubmit}>
-      <input
-        type="text"
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ display: "flex", borderTop: 1, borderColor: "divider", p: 1 }}
+    >
+      <TextField
         placeholder="Type your message"
         value={text}
         onChange={(e) => setText(e.target.value)}
+        fullWidth
       />
-      <Button type="submit" variant="contained">
-        Send
-      </Button>
-    </form>
+      <IconButton type="submit" color="primary" aria-label="send">
+        <SendIcon />
+      </IconButton>
+    </Box>
   );
 }
