@@ -17,7 +17,14 @@ services:
       retries: 5
 
   root-config:
-    build: .
+    image: node:18
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: npm start
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
     ports: ["9000:9000"]
 
   angular-app:
@@ -29,8 +36,15 @@ services:
   #   ports: ["4200:80"]
 
   react-app:
-    build: ./react-app
-    ports: ["8080:80"]
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./react-app:/app
+    command: npm start
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+    ports: ["8080:8080"]
 
   backend:
     build: ./python-backend

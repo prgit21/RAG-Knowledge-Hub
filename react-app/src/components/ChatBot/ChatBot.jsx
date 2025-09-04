@@ -14,7 +14,7 @@ export default function ChatBot() {
     const botMessage = {
       id: Date.now() + 1,
       role: "bot",
-      text: "This is a demo response.",
+      text: "This is a not a demo response.",
     };
     debugger
     setMessages((prev) => [...prev, userMessage, botMessage]);
