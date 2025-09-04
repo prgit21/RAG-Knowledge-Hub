@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
+import requests
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,7 +14,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 from .db import Base, engine, SessionLocal, get_db
 from .models import Embedding, User
-from .schemas import Token, EmbeddingOut, AskRequest, AskResponse
+from .schemas import OpenAIRequest, Token, EmbeddingOut, AskRequest, AskResponse
 
 # Load environment variables
 load_dotenv()
@@ -126,21 +127,19 @@ def list_embeddings(
     ]
 
 
-@app.post("/api/ask", response_model=AskResponse)
-def ask_question(request: AskRequest, db: Session = Depends(get_db)):
-    embedding_model = OpenAIEmbeddings()
-    query_vector = embedding_model.embed_query(request.question)
-    results = (
-        db.query(Embedding)
-        .order_by(Embedding.embedding.cosine_distance(query_vector))
-        .limit(5)
-        .all()
+@app.post("/api/openai")
+def call_openai(request: OpenAIRequest):
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {"model": request.model, "input": request.input}
+    response = requests.post(
+        "https://api.openai.com/v1/responses", headers=headers, json=payload
     )
-    context = "\n".join([r.content for r in results if r.content])
-    llm = ChatOpenAI(temperature=0)
-    prompt = (
-        f"Use the following context to answer the question.\n"
-        f"Context:\n{context}\n\nQuestion: {request.question}"
-    )
-    answer = llm.predict(prompt)
-    return {"answer": answer}
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.text)
+    return response.json()

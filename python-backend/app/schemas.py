@@ -43,3 +43,7 @@ class AskRequest(BaseModel):
 
 class AskResponse(BaseModel):
     answer: str
+
+class OpenAIRequest(BaseModel):
+    model: str
+    input: str

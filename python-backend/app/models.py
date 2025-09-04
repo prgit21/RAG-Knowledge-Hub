@@ -18,4 +18,3 @@ class Embedding(Base):
     content = Column(String, nullable=True)
 
     embedding = Column(Vector(3))
-
