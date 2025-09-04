@@ -1,11 +1,9 @@
-export default function Root(props) {
+import ChatBot from "./components/ChatBot/ChatBot";
+
+export default function Root() {
   return (
     <section>
-      {props.name} is mounted!
-      <br />
-      <a href="/react">On angular shell, react is mounted</a>
-      <br />
-      <a href="/dashboard">Go To Angular App</a>
+      <ChatBot />
     </section>
   );
 }
