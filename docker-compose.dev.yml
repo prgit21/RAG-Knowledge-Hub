@@ -24,9 +24,9 @@ services:
     build: ./angular-app
     ports: ["4201:80"]
 
-  dashboard:
-    build: ./dashboard
-    ports: ["4200:80"]
+  # dashboard:
+  #   build: ./dashboard not needed will deprecate later
+  #   ports: ["4200:80"]
 
   react-app:
     build: ./react-app
