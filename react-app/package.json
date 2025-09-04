@@ -1,5 +1,8 @@
 {
   "name": "@react-app/react-app",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "webpack serve --host 0.0.0.0 --port 8080",
     "start:standalone": "webpack serve --env standalone",
