@@ -47,14 +47,3 @@ class AskResponse(BaseModel):
 class OpenAIRequest(BaseModel):
     model: str
     input: str
-
-class ImageMetaOut(BaseModel):
-    id: int
-    url: str
-    hash: str
-    width: int
-    height: int
-
-    class Config:
-        orm_mode = True
-

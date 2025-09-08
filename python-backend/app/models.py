@@ -18,12 +18,3 @@ class Embedding(Base):
     content = Column(String, nullable=True)
 
     embedding = Column(Vector(3))
-
-class ImageMetadata(Base):
-    __tablename__ = "image_metadata"
-
-    id = Column(Integer, primary_key=True, index=True)
-    url = Column(String, index=True)
-    hash = Column(String, unique=True)
-    width = Column(Integer)
-    height = Column(Integer)
