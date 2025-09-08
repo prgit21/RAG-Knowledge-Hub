@@ -5,6 +5,9 @@ import ChatInput from "./ChatInput";
 
 export default function ChatBot() {
   const [messages, setMessages] = useState([]);
+  // const apiBase = process.env.REACT_APP_API_URL || "http://localhost:8000";
+  const apiBase = "http://localhost:8000";
+
 
   const handleSend = async (text) => {
     if (!text.trim()) {
@@ -15,7 +18,7 @@ export default function ChatBot() {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const response = await fetch("/api/openai", {
+      const response = await fetch(`${apiBase}/api/openai`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "gpt-4o-mini", input: text }),
