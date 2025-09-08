@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import debounce from "lodash.debounce";
 import { Box, Stack, Paper, List } from "@mui/material";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
@@ -8,8 +9,7 @@ export default function ChatBot() {
   // const apiBase = process.env.REACT_APP_API_URL || "http://localhost:8000";
   const apiBase = "http://localhost:8000";
 
-
-  const handleSend = async (text) => {
+  const handleSend = useCallback(async (text) => {
     if (!text.trim()) {
       return;
     }
@@ -38,7 +38,17 @@ export default function ChatBot() {
       };
       setMessages((prev) => [...prev, botMessage]);
     }
-  };
+  }, []);
+
+  // Debounce to prevent rapid multiple API calls
+  const debouncedHandleSend = useMemo(() => debounce(handleSend, 500), [handleSend]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      debouncedHandleSend.cancel();
+    };
+  }, [debouncedHandleSend]);
 
   return (
     <Box
@@ -55,7 +65,7 @@ export default function ChatBot() {
             <ChatMessage key={msg.id} message={msg} />
           ))}
         </List>
-        <ChatInput onSend={handleSend} />
+        <ChatInput onSend={debouncedHandleSend} />
       </Stack>
     </Box>
   );
