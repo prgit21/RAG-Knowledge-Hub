@@ -31,7 +31,7 @@ export default function ChatBot() {
       const botMessage = {
         id: Date.now() + 1,
         role: "bot",
-        text: "Error contacting server.",
+        text: "Error contacting server.{}"+err.message,
       };
       setMessages((prev) => [...prev, botMessage]);
     }
