@@ -6,17 +6,35 @@ import ChatInput from "./ChatInput";
 export default function ChatBot() {
   const [messages, setMessages] = useState([]);
 
-  const handleSend = (text) => {
+  const handleSend = async (text) => {
     if (!text.trim()) {
       return;
     }
+
     const userMessage = { id: Date.now(), role: "user", text };
-    const botMessage = {
-      id: Date.now() + 1,
-      role: "bot",
-      text: "This is a not a demo response.",
-    };
-    setMessages((prev) => [...prev, userMessage, botMessage]);
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      const response = await fetch("/api/openai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "gpt-4o-mini", input: text }),
+      });
+      const data = await response.json();
+      const botText =
+        data.output?.[0]?.content?.[0]?.text ||
+        data.choices?.[0]?.message?.content ||
+        "No response";
+      const botMessage = { id: Date.now() + 1, role: "bot", text: botText };
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (err) {
+      const botMessage = {
+        id: Date.now() + 1,
+        role: "bot",
+        text: "Error contacting server.",
+      };
+      setMessages((prev) => [...prev, botMessage]);
+    }
   };
 
   return (
