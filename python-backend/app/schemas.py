@@ -44,6 +44,20 @@ class AskRequest(BaseModel):
 class AskResponse(BaseModel):
     answer: str
 
+
 class OpenAIRequest(BaseModel):
     model: str
     input: str
+
+
+class ImageOut(BaseModel):
+    id: int
+    url: str
+    hash: str
+    width: int
+    height: int
+    embedding: List[float]
+
+    class Config:
+        orm_mode = True
+

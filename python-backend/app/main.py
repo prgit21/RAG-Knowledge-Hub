@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 import requests
+import hashlib
 
 from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,10 +15,19 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from minio import Minio
 from io import BytesIO
 import uuid
+from PIL import Image
+from sentence_transformers import SentenceTransformer
 
 from .db import Base, engine, SessionLocal, get_db
-from .models import Embedding, User
-from .schemas import OpenAIRequest, Token, EmbeddingOut, AskRequest, AskResponse
+from .models import Embedding, User, ImageMetadata
+from .schemas import (
+    OpenAIRequest,
+    Token,
+    EmbeddingOut,
+    AskRequest,
+    AskResponse,
+    ImageOut,
+)
 
 # Load environment variables
 load_dotenv()
@@ -37,6 +47,8 @@ minio_client = Minio(
     secret_key=MINIO_SECRET_KEY,
     secure=MINIO_SECURE,
 )
+
+clip_model = SentenceTransformer("clip-ViT-B-32")
 
 
 app = FastAPI()
@@ -145,8 +157,10 @@ def list_embeddings(
     ]
 
 
-@app.post("/api/upload-image")
-async def upload_image(file: UploadFile = File(...)):
+@app.post("/api/upload-image", response_model=ImageOut)
+async def upload_image(
+    file: UploadFile = File(...), db: Session = Depends(get_db)
+):
     data = await file.read()
     object_name = f"{uuid.uuid4()}_{file.filename}"
     minio_client.put_object(
@@ -156,7 +170,22 @@ async def upload_image(file: UploadFile = File(...)):
         length=len(data),
         content_type=file.content_type,
     )
-    return {"filename": object_name}
+    image = Image.open(BytesIO(data))
+    width, height = image.size
+    hash_value = hashlib.sha256(data).hexdigest()
+    url = f"{'https' if MINIO_SECURE else 'http'}://{MINIO_ENDPOINT}/{MINIO_BUCKET}/{object_name}"
+    embedding = clip_model.encode([image], convert_to_tensor=False)[0]
+    metadata = ImageMetadata(
+        url=url,
+        hash=hash_value,
+        width=width,
+        height=height,
+        embedding=embedding.tolist(),
+    )
+    db.add(metadata)
+    db.commit()
+    db.refresh(metadata)
+    return metadata
 
 
 @app.post("/api/openai")

@@ -11,3 +11,5 @@ minio
 langchain
 langchain-openai
 openai
+Pillow
+sentence-transformers
