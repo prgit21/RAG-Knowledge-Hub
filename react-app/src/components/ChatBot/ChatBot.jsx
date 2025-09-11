@@ -43,6 +43,33 @@ export default function ChatBot() {
   // Debounce to prevent rapid multiple API calls
   const debouncedHandleSend = useMemo(() => debounce(handleSend, 500), [handleSend]);
 
+  const handleImageUpload = useCallback(
+    async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const userMessage = {
+        id: Date.now(),
+        role: "user",
+        text: `[Image: ${file.name}]`,
+      };
+      setMessages((prev) => [...prev, userMessage]);
+      try {
+        await fetch(`${apiBase}/api/upload-image`, {
+          method: "POST",
+          body: formData,
+        });
+      } catch (err) {
+        const botMessage = {
+          id: Date.now() + 1,
+          role: "bot",
+          text: "Image upload failed: " + err.message,
+        };
+        setMessages((prev) => [...prev, botMessage]);
+      }
+    },
+    [apiBase]
+  );
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -65,7 +92,7 @@ export default function ChatBot() {
             <ChatMessage key={msg.id} message={msg} />
           ))}
         </List>
-        <ChatInput onSend={debouncedHandleSend} />
+        <ChatInput onSend={debouncedHandleSend} onSendImage={handleImageUpload} />
       </Stack>
     </Box>
   );

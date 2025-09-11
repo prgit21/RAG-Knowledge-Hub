@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 import requests
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 import os
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from minio import Minio
+from io import BytesIO
+import uuid
 
 from .db import Base, engine, SessionLocal, get_db
 from .models import Embedding, User
@@ -21,6 +24,19 @@ load_dotenv()
 JWT_SECRET = os.getenv("JWT_SECRET")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9001")
+MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
+MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "minioadmin")
+MINIO_BUCKET = os.getenv("MINIO_BUCKET", "images")
+MINIO_SECURE = os.getenv("MINIO_SECURE", "false").lower() == "true"
+
+minio_client = Minio(
+    MINIO_ENDPOINT,
+    access_key=MINIO_ACCESS_KEY,
+    secret_key=MINIO_SECRET_KEY,
+    secure=MINIO_SECURE,
+)
 
 
 app = FastAPI()
@@ -52,6 +68,8 @@ def on_startup():
         db.add(User(username="user", hashed_password=pwd_context.hash("password")))
         db.commit()
     db.close()
+    if not minio_client.bucket_exists(MINIO_BUCKET):
+        minio_client.make_bucket(MINIO_BUCKET)
 
 
 @app.get("/api/hello")
@@ -125,6 +143,20 @@ def list_embeddings(
         {"id": e.id, "embedding": list(e.embedding), "content": e.content}
         for e in results
     ]
+
+
+@app.post("/api/upload-image")
+async def upload_image(file: UploadFile = File(...)):
+    data = await file.read()
+    object_name = f"{uuid.uuid4()}_{file.filename}"
+    minio_client.put_object(
+        MINIO_BUCKET,
+        object_name,
+        BytesIO(data),
+        length=len(data),
+        content_type=file.content_type,
+    )
+    return {"filename": object_name}
 
 
 @app.post("/api/openai")

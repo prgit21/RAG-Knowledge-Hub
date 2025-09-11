@@ -1,9 +1,20 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Box, TextField, IconButton } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
+import ImageIcon from "@mui/icons-material/Image";
 
-export default function ChatInput({ onSend }) {
+export default function ChatInput({ onSend, onSendImage }) {
   const [text, setText] = useState("");
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file && onSendImage) {
+      onSendImage(file);
+      // reset the input so the same file can be uploaded again if needed
+      e.target.value = null;
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -23,6 +34,20 @@ export default function ChatInput({ onSend }) {
         onChange={(e) => setText(e.target.value)}
         fullWidth
       />
+      <input
+        type="file"
+        accept="image/*"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
+      <IconButton
+        color="primary"
+        aria-label="upload image"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <ImageIcon />
+      </IconButton>
       <IconButton type="submit" color="primary" aria-label="send">
         <SendIcon />
       </IconButton>
