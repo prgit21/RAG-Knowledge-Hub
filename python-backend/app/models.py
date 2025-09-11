@@ -28,5 +28,3 @@ class ImageMetadata(Base):
     width = Column(Integer)
     height = Column(Integer)
     embedding = Column(Vector(512))
-    text = Column(String, nullable=True)
-    text_embedding = Column(Vector(384), nullable=True)

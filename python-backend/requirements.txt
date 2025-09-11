@@ -13,4 +13,3 @@ langchain-openai
 openai
 Pillow
 sentence-transformers
-pytesseract

@@ -17,10 +17,6 @@ from io import BytesIO
 import uuid
 from PIL import Image
 from sentence_transformers import SentenceTransformer
-try:
-    import pytesseract
-except Exception:  # pragma: no cover - optional dependency
-    pytesseract = None
 
 from .db import Base, engine, SessionLocal, get_db
 from .models import Embedding, User, ImageMetadata
@@ -53,7 +49,6 @@ minio_client = Minio(
 )
 
 clip_model = SentenceTransformer("clip-ViT-B-32")
-text_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 app = FastAPI()
@@ -180,23 +175,12 @@ async def upload_image(
     hash_value = hashlib.sha256(data).hexdigest()
     url = f"{'https' if MINIO_SECURE else 'http'}://{MINIO_ENDPOINT}/{MINIO_BUCKET}/{object_name}"
     embedding = clip_model.encode([image], convert_to_tensor=False)[0]
-    ocr_text = ""
-    if pytesseract is not None:
-        try:
-            ocr_text = pytesseract.image_to_string(image)
-        except pytesseract.TesseractNotFoundError:
-            ocr_text = ""
-    text_vec = None
-    if ocr_text.strip():
-        text_vec = text_model.encode([ocr_text], convert_to_tensor=False)[0].tolist()
     metadata = ImageMetadata(
         url=url,
         hash=hash_value,
         width=width,
         height=height,
         embedding=embedding.tolist(),
-        text=ocr_text,
-        text_embedding=text_vec,
     )
     db.add(metadata)
     db.commit()

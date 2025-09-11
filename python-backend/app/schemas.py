@@ -57,8 +57,6 @@ class ImageOut(BaseModel):
     width: int
     height: int
     embedding: List[float]
-    text: str | None = None
-    text_embedding: List[float] | None = None
 
     class Config:
         orm_mode = True
