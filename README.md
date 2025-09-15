@@ -76,9 +76,6 @@ A knowledge hub that lets users upload, search, and query across documents and i
 ## 📦 Getting Started
 
 ```bash
-# Clone repo
-git clone https://github.com/<your-username>/rag-knowledge-hub.git
-cd rag-knowledge-hub
 
 # Start docker services
 docker-compose up --build
