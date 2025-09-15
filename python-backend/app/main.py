@@ -185,7 +185,21 @@ async def upload_image(
     db.add(metadata)
     db.commit()
     db.refresh(metadata)
-    return metadata
+    image_out = ImageOut(
+        id=metadata.id,
+        url=metadata.url,
+        hash=metadata.hash,
+        width=metadata.width,
+        height=metadata.height,
+        embedding=list(metadata.embedding) if metadata.embedding is not None else [],
+        text=metadata.text,
+        text_embedding=(
+            list(metadata.text_embedding)
+            if metadata.text_embedding is not None
+            else None
+        ),
+    )
+    return image_out
 
 
 @app.post("/api/openai")
