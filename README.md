@@ -1,113 +1,98 @@
-# Microfrontend Knowledge Hub (WIP)
 
-## Overview
+# RAG Knowledge Hub
 
-A multi-framework microfrontend application built with **single-spa**, integrating Angular and React frontends with a **FastAPI** backend. This project evolves into a **Knowledge Hub / Research Assistant**: users upload documents (PDFs, lecture notes, articles) and query them conversationally, with results powered by a Retrieval-Augmented Generation (RAG) pipeline.
+**Micro-frontends | Multimodal Chatbot | Retrieval-Augmented Generation (RAG)**
 
----
-
-## Architecture
-
-### Frontend (Microfrontends)
-
-* **Root Config**: `app-root-config.ts` + `microfrontend-layout.html` handle routing and application registration.
-* **Routes**:
-
-  * `/` → Login (Angular)
-  * `/dashboard` → Dashboard (Angular)
-  * `/ask` → Ask UI (React, query interface)
-  * `/admin` → Admin UI (Angular, upload & ingestion status)
-* **Import Map**: `importmap.json` resolves module URLs for each microfrontend.
-
-### Backend (FastAPI)
-
-* **Auth**: JWT-based login (`/api/login`) and protected routes (`/api/protected`).
-* **Knowledge Hub Endpoints**:
-
-  * `/api/documents` → Upload/list documents (stored in MinIO/S3).
-  * `/api/ingest` → Worker ingestion (parse → chunk → embed → pgvector).
-  * `/api/ask` → Conversational Q\&A endpoint (retrieves from pgvector, caches in Redis, calls LLM).
-
-### Data Services
-
-* **Postgres + pgvector**: Store chunks + embeddings.
-* **Redis**: Cache answers, queue tasks.
-* **MinIO/S3**: Store uploaded documents.
+A knowledge hub that lets users upload, search, and query across documents and images using **retrieval-augmented multimodal generation**. Built with **Angular + React micro-frontends, FastAPI backend, Dockerized services, Postgres + pgvector, MinIO object storage, and HuggingFace embeddings**.
 
 ---
 
-## Knowledge Hub / Research Assistant
+## 🚀 Features
 
-### What it is
+* **Micro-frontend architecture**: Angular + React unified via `single-spa`, JWT-protected routing, Nginx proxy.
+* **Multimodal chatbot**: Natural language + image queries through FastAPI REST endpoints.
+* **Vector search pipeline**:
 
-A platform for uploading and querying academic or reference materials conversationally.
+  * MinIO for image storage.
+  * PostgreSQL for metadata (URLs, hashes, dimensions).
+  * pgvector + CLIP embeddings (image + text).
+  * OCR text extraction for screenshots/diagrams.
+* **ANN indexing**: IVF/HNSW for fast similarity search (cosine/dot product).
+* **Context composition**:
 
-
-* Demonstrates an **end-to-end ingestion pipeline** (Admin MF → FastAPI → MinIO → Worker → Postgres/pgvector).
-* Implements **RAG retrieval** (vector DB + Redis cache).
-* Highlights **microfrontend separation**:
-
-  * **Ask MF**: end-users query content.
-  * **Admin MF**: admins upload and monitor ingestion.
-* **Stretch Goals**:
-
-  * Per-course RBAC (students vs instructors).
-  * Hybrid retrieval (BM25 + vectors).
-  * Evaluation harness for retrieval quality.
+  * Multimodal models (GPT-4o / GPT-4o-mini) consume both images + OCR/captions.
+  * Text-only models consume captions/metadata.
 
 ---
 
-## Development Workflow
+## 🔄 RAG Flow (Conceptual)
 
-### Install dependencies
+1. **Upload & Store**
 
-* **Frontends**: `npm install` at the root and inside each MF (`angular-app`, `dashboard`, `react-app`, `ask-app`, `admin-app`).
-* **Backend**: `pip install -r requirements.txt` in `python-backend`, configure `.env` with JWT + DB/Redis/MinIO credentials.
+   * User uploads an image → store bytes in **MinIO/S3**.
+   * Save metadata in **Postgres** (URL, hash, width/height).
 
-### Run locally
+2. **Represent**
 
-* `./start-servers.sh` launches root config, Angular apps, React apps, and FastAPI backend.
-* Root shell: [http://localhost:9000](http://localhost:9000)
-* Ask UI: `/ask`
-* Admin UI: `/admin`
+   * Generate global visual embeddings (**CLIP-style**).
+   * Optional: run OCR/captioning → embed text → enrich search.
 
-### Run with Docker
+3. **Index**
 
-* `docker-compose up --build` starts all services. Ports:
+   * Store vectors in **pgvector**.
+   * Build **ANN index** (IVF/HNSW).
 
-  * root: 9000
-  * login: 4201
-  * dashboard: 4200
-  * ask: 8001
-  * admin: 8002
-  * postgres: 5432
-  * redis: 6379
-  * minio: 9001 (console 9002)
+4. **Retrieve**
+
+   * Query text → embed with CLIP text tower → ANN search over image vectors.
+   * Hybrid retrieval (image + OCR/captions).
+   * Return top-k candidates.
+
+5. **Compose Context**
+
+   * **Multimodal models**: Pass image URLs + OCR text.
+   * **Text-only models**: Pass OCR/captions/metadata.
+
+6. **Answer**
+
+   * LLM answers using retrieved items, with citations.
 
 ---
 
-### MinIO example
+## 🛠️ Tech Stack
 
-An example script demonstrating basic interaction with MinIO is provided at
-`python-backend/examples/minio_example.py`. After starting the services with
-Docker Compose, run:
+* **Frontend**: Angular + React (micro-frontends, single-spa).
+* **Backend**: FastAPI REST services.
+* **Auth**: JWT.
+* **Storage**: MinIO (S3-compatible).
+* **Database**: PostgreSQL + pgvector.
+* **Search**: ANN (IVF/HNSW).
+* **Embeddings**: HuggingFace CLIP + OCR text.
+* **Containerization**: Docker + docker-compose.
+* **Reasoning**: OpenAI GPT-4o / GPT-4o-mini multimodal models.
+
+---
+
+## 📦 Getting Started
 
 ```bash
-pip install -r python-backend/requirements.txt
-python python-backend/examples/minio_example.py
+
+# Start docker services
+docker-compose up --build
 ```
 
-The script connects to `localhost:9001`, creates a bucket, uploads a file, and
-prints its contents.
+Frontend apps run on `localhost:9000` (root-config), `4201` (Angular), `4202` (React).
+Backend available on `localhost:8000`.
 
 ---
 
-## Status
+## 📌 Roadmap
 
-This is an active **work in progress**. Current capabilities include:
+* [x] Micro-frontend integration (Angular + React + JWT auth).
+* [x] FastAPI backend with MinIO + pgvector.
+* [x] Image embeddings + OCR text embeddings.
+* [ ] ANN similarity search.
+* [ ] (WIP) Context composition with GPT-4o multimodal.
+* [ ] Text + image hybrid retrieval optimization.
+* [ ] Dashboard for query analytics.
 
-* JWT authentication and protected routes.
-* Microfrontends integrated via single-spa.
-* RAG pipeline under development (document upload, ingestion, and query flow).
-
-Future iterations will expand retrieval quality, RBAC, observability,RAG completion and CI/CD integration.
