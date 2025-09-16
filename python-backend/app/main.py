@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 from typing import List, Optional
 import requests
 import hashlib
+import numpy as np
+import easyocr
 
 from fastapi import Depends, FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +11,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from dotenv import load_dotenv
+from sqlalchemy import inspect, text as sa_text
+from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.orm import Session
 import os
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -49,6 +53,7 @@ minio_client = Minio(
 )
 
 clip_model = SentenceTransformer("clip-ViT-B-32")
+ocr_reader = easyocr.Reader(["en"], gpu=False)
 
 
 app = FastAPI()
@@ -75,6 +80,20 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    with engine.begin() as connection:
+        inspector = inspect(connection)
+        table_exists = True
+        try:
+            columns = {column["name"] for column in inspector.get_columns("images")}
+        except NoSuchTableError:
+            table_exists = False
+            columns = set()
+        if table_exists and "text" not in columns:
+            connection.execute(sa_text("ALTER TABLE images ADD COLUMN text TEXT"))
+        if table_exists and "text_embedding" not in columns:
+            connection.execute(
+                sa_text("ALTER TABLE images ADD COLUMN text_embedding vector(512)")
+            )
     db = SessionLocal()
     if not db.query(User).filter(User.username == "user").first():
         db.add(User(username="user", hashed_password=pwd_context.hash("password")))
@@ -170,17 +189,34 @@ async def upload_image(
         length=len(data),
         content_type=file.content_type,
     )
-    image = Image.open(BytesIO(data))
+    image = Image.open(BytesIO(data)).convert("RGB")
     width, height = image.size
     hash_value = hashlib.sha256(data).hexdigest()
     url = f"{'https' if MINIO_SECURE else 'http'}://{MINIO_ENDPOINT}/{MINIO_BUCKET}/{object_name}"
-    embedding = clip_model.encode([image], convert_to_tensor=False)[0]
+    image_embedding_vector = (
+        clip_model.encode([image], convert_to_tensor=False)[0].tolist()
+    )
+    ocr_text = None
+    text_embedding_vector = None
+    try:
+        ocr_results = ocr_reader.readtext(np.array(image), detail=0)
+        text_parts = [result for result in ocr_results if result]
+        if text_parts:
+            ocr_text = " ".join(text_parts).strip()
+    except Exception:
+        ocr_text = None
+    if ocr_text:
+        text_embedding_vector = (
+            clip_model.encode([ocr_text], convert_to_tensor=False)[0].tolist()
+        )
     metadata = ImageMetadata(
         url=url,
         hash=hash_value,
         width=width,
         height=height,
-        embedding=embedding.tolist(),
+        embedding=image_embedding_vector,
+        text=ocr_text,
+        text_embedding=text_embedding_vector,
     )
     db.add(metadata)
     db.commit()
