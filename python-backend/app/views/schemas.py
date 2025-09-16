@@ -1,4 +1,6 @@
-from typing import List
+"""Pydantic schemas for serialising API responses and requests."""
+
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -9,7 +11,7 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: str | None = None
+    username: Optional[str] = None
 
 
 class UserBase(BaseModel):
@@ -30,8 +32,7 @@ class UserOut(UserBase):
 class EmbeddingOut(BaseModel):
     id: int
     embedding: List[float]
-    content: str | None = None
-
+    content: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -57,9 +58,8 @@ class ImageOut(BaseModel):
     width: int
     height: int
     embedding: List[float]
-    text: str | None = None
-    text_embedding: List[float] | None = None
+    text: Optional[str] = None
+    text_embedding: Optional[List[float]] = None
 
     class Config:
         orm_mode = True
-
