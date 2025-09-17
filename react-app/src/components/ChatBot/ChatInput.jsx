@@ -1,9 +1,9 @@
 import { useState, useRef } from "react";
-import { Box, TextField, IconButton } from "@mui/material";
+import { Box, TextField, IconButton, Button } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import ImageIcon from "@mui/icons-material/Image";
 
-export default function ChatInput({ onSend, onSendImage }) {
+export default function ChatInput({ onSend, onSendImage, onRetrieve }) {
   const [text, setText] = useState("");
   const fileInputRef = useRef(null);
 
@@ -19,6 +19,18 @@ export default function ChatInput({ onSend, onSendImage }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSend(text);
+    setText("");
+  };
+
+  const handleRetrieveClick = () => {
+    if (!onRetrieve) {
+      return;
+    }
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+    onRetrieve(text);
     setText("");
   };
 
@@ -48,6 +60,16 @@ export default function ChatInput({ onSend, onSendImage }) {
       >
         <ImageIcon />
       </IconButton>
+      <Button
+        type="button"
+        variant="contained"
+        size="small"
+        onClick={handleRetrieveClick}
+        sx={{ ml: 1 }}
+        disabled={!text.trim()}
+      >
+        Retrieve
+      </Button>
       <IconButton type="submit" color="primary" aria-label="send">
         <SendIcon />
       </IconButton>
