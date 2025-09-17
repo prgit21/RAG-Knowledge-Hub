@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -54,6 +55,9 @@ def include_routers(application: FastAPI) -> None:
     application.include_router(search.router)
 
 
+_hnsw_index_creation_scheduled = threading.Event()
+
+
 def init_database() -> None:
     Base.metadata.create_all(bind=engine)
     with engine.begin() as connection:
@@ -71,23 +75,81 @@ def init_database() -> None:
                 sa_text("ALTER TABLE images ADD COLUMN text_embedding vector(512)")
             )
 
-        # Ensure HNSW indexes exist so cosine similarity searches remain fast.
-        # PostgreSQL keeps these indexes up to date automatically as new rows are inserted.
-        hnsw_index_statements = (
-            "CREATE INDEX IF NOT EXISTS embeddings_embedding_hnsw_idx "
+    _schedule_hnsw_index_creation()
+
+
+def _schedule_hnsw_index_creation() -> None:
+    if _hnsw_index_creation_scheduled.is_set():
+        return
+
+    _hnsw_index_creation_scheduled.set()
+    logger.info(
+        "Launching background task to ensure HNSW indexes exist so uploads stay responsive while they build."
+    )
+    threading.Thread(
+        target=_ensure_hnsw_indexes,
+        name="hnsw-index-init",
+        daemon=True,
+    ).start()
+
+
+def _ensure_hnsw_indexes() -> None:
+    # Ensure HNSW indexes exist so cosine similarity searches remain fast. They must
+    # be created concurrently using an autocommit connection so inserts remain
+    # non-blocking while PostgreSQL finishes building them in the background.
+    hnsw_index_statements = (
+        (
+            "embeddings_embedding_hnsw_idx",
+            "CREATE INDEX CONCURRENTLY embeddings_embedding_hnsw_idx "
             "ON embeddings USING hnsw (embedding vector_cosine_ops)",
-            "CREATE INDEX IF NOT EXISTS images_embedding_hnsw_idx "
+        ),
+        (
+            "images_embedding_hnsw_idx",
+            "CREATE INDEX CONCURRENTLY images_embedding_hnsw_idx "
             "ON images USING hnsw (embedding vector_cosine_ops)",
-            "CREATE INDEX IF NOT EXISTS images_text_embedding_hnsw_idx "
+        ),
+        (
+            "images_text_embedding_hnsw_idx",
+            "CREATE INDEX CONCURRENTLY images_text_embedding_hnsw_idx "
             "ON images USING hnsw (text_embedding vector_cosine_ops)",
-        )
+        ),
+    )
 
-        for statement in hnsw_index_statements:
-            connection.execute(sa_text(statement))
+    created_indexes: list[str] = []
+    skipped_indexes: list[str] = []
 
+    try:
+        with engine.connect().execution_options(isolation_level="AUTOCOMMIT") as connection:
+            for index_name, statement in hnsw_index_statements:
+                exists = connection.execute(
+                    sa_text("SELECT to_regclass(:index_name)"),
+                    {"index_name": index_name},
+                ).scalar()
+                if exists:
+                    skipped_indexes.append(index_name)
+                    continue
+
+                logger.info(
+                    "Creating HNSW index %s concurrently so uploads remain available.",
+                    index_name,
+                )
+                connection.execute(sa_text(statement))
+                created_indexes.append(index_name)
+    except Exception:  # pragma: no cover - defensive logging for unexpected failures.
+        logger.exception("Failed to create HNSW indexes concurrently.")
+        _hnsw_index_creation_scheduled.clear()
+        return
+
+    if created_indexes:
         logger.info(
-            "Ensured HNSW vector indexes for cosine similarity queries are present; "
-            "they stay synchronized automatically on inserts."
+            "Finished concurrent build for HNSW vector indexes: %s. They stay synchronized "
+            "automatically on inserts.",
+            ", ".join(created_indexes),
+        )
+    if skipped_indexes:
+        logger.info(
+            "HNSW vector indexes already exist; skipping creation: %s.",
+            ", ".join(skipped_indexes),
         )
 
 
