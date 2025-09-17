@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import inspect, text as sa_text
@@ -14,6 +16,9 @@ from app.repositories.users_repo import UserRepository
 from app.routers import auth, images, search
 from app.utils.hashing import hash_password
 from app.utils.storage import get_storage_client
+
+
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -65,6 +70,25 @@ def init_database() -> None:
             connection.execute(
                 sa_text("ALTER TABLE images ADD COLUMN text_embedding vector(512)")
             )
+
+        # Ensure HNSW indexes exist so cosine similarity searches remain fast.
+        # PostgreSQL keeps these indexes up to date automatically as new rows are inserted.
+        hnsw_index_statements = (
+            "CREATE INDEX IF NOT EXISTS embeddings_embedding_hnsw_idx "
+            "ON embeddings USING hnsw (embedding vector_cosine_ops)",
+            "CREATE INDEX IF NOT EXISTS images_embedding_hnsw_idx "
+            "ON images USING hnsw (embedding vector_cosine_ops)",
+            "CREATE INDEX IF NOT EXISTS images_text_embedding_hnsw_idx "
+            "ON images USING hnsw (text_embedding vector_cosine_ops)",
+        )
+
+        for statement in hnsw_index_statements:
+            connection.execute(sa_text(statement))
+
+        logger.info(
+            "Ensured HNSW vector indexes for cosine similarity queries are present; "
+            "they stay synchronized automatically on inserts."
+        )
 
 
 def init_default_user() -> None:
