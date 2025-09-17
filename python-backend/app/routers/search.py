@@ -11,7 +11,16 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.repositories.images_repo import EmbeddingRepository
-from app.schemas.embeddings import EmbeddingOut, OpenAIRequest
+from app.schemas.embeddings import (
+    EmbeddingOut,
+    OpenAIRequest,
+    RetrieveQuery,
+    RetrievedItem,
+)
+from app.services.retrieval_service import (
+    RetrievalService,
+    get_retrieval_service,
+)
 
 router = APIRouter(prefix="/api", tags=["search"])
 
@@ -59,6 +68,29 @@ def call_openai(request: OpenAIRequest) -> dict:
     if response.status_code != 200:
         raise HTTPException(status_code=response.status_code, detail=response.text)
     return response.json()
+
+
+@router.post("/search/retrieve", response_model=List[RetrievedItem])
+def retrieve_images(
+    request: RetrieveQuery,
+    db: Session = Depends(get_db),
+    retrieval_service: RetrievalService = Depends(get_retrieval_service),
+) -> List[RetrievedItem]:
+    results = retrieval_service.retrieve(db=db, query=request.query, k=request.k)
+    return [
+        RetrievedItem(
+            id=result.metadata.id,
+            url=result.metadata.url,
+            width=result.metadata.width,
+            height=result.metadata.height,
+            score=result.score,
+            ocr_text=result.metadata.text,
+            modalities_used=result.modalities,
+            distances=result.distances,
+            similarities=result.similarities,
+        )
+        for result in results
+    ]
 
 
 __all__ = ["router"]

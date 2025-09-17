@@ -39,6 +39,41 @@ class ImageRepository:
         self._session.refresh(metadata)
         return metadata
 
+    def search_by_embedding_vector(
+        self, vector: List[float], limit: int = 3
+    ) -> List[tuple[ImageMetadata, float]]:
+        """Return image rows ordered by visual embedding distance."""
+
+        distance = ImageMetadata.embedding.cosine_distance(vector)
+        query = (
+            self._session.query(ImageMetadata, distance.label("distance"))
+            .order_by(distance)
+        )
+        if limit is not None:
+            query = query.limit(limit)
+        return [
+            (record, float(dist))
+            for record, dist in query.all()
+        ]
+
+    def search_by_text_embedding_vector(
+        self, vector: List[float], limit: int = 3
+    ) -> List[tuple[ImageMetadata, float]]:
+        """Return image rows ordered by OCR/text embedding distance."""
+
+        distance = ImageMetadata.text_embedding.cosine_distance(vector)
+        query = (
+            self._session.query(ImageMetadata, distance.label("distance"))
+            .filter(ImageMetadata.text_embedding.isnot(None))
+            .order_by(distance)
+        )
+        if limit is not None:
+            query = query.limit(limit)
+        return [
+            (record, float(dist))
+            for record, dist in query.all()
+        ]
+
 
 class EmbeddingRepository:
     def __init__(self, session: Session) -> None:
