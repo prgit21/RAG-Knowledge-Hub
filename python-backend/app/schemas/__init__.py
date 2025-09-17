@@ -1,7 +1,15 @@
 """Schema exports."""
 
 from .auth import Token, TokenData, UserBase, UserCreate, UserOut
-from .embeddings import AskRequest, AskResponse, EmbeddingOut, OpenAIRequest
+from .embeddings import (
+    AskRequest,
+    AskResponse,
+    EmbeddingOut,
+    OpenAIRequest,
+    RetrieveQuery,
+    RetrievedItem,
+    RetrievalAugmentedResponse,
+)
 from .images import ImageOut
 
 __all__ = [
@@ -14,5 +22,8 @@ __all__ = [
     "AskRequest",
     "AskResponse",
     "OpenAIRequest",
+    "RetrieveQuery",
+    "RetrievedItem",
+    "RetrievalAugmentedResponse",
     "ImageOut",
 ]

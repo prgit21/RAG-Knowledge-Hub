@@ -52,6 +52,7 @@ class Settings:
     minio_secure: bool = False
     cors_origins: List[str] = field(default_factory=_get_cors_origins)
     openai_api_url: str = "https://api.openai.com/v1/responses"
+    openai_chat_api_url: str = "https://api.openai.com/v1/chat/completions"
     openai_api_key: Optional[str] = None
 
 
@@ -73,6 +74,9 @@ def get_settings() -> Settings:
         minio_secure=_str_to_bool(os.getenv("MINIO_SECURE"), False),
         cors_origins=_get_cors_origins(),
         openai_api_url=os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/responses"),
+        openai_chat_api_url=os.getenv(
+            "OPENAI_CHAT_API_URL", "https://api.openai.com/v1/chat/completions"
+        ),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
     )
 

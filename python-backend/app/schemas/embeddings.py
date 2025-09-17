@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from pydantic import BaseModel
 
@@ -60,6 +60,11 @@ class RetrievedItem(BaseModel):
             orm_mode = True
 
 
+class RetrievalAugmentedResponse(BaseModel):
+    items: List[RetrievedItem]
+    completion: Dict[str, Any]
+
+
 __all__ = [
     "EmbeddingOut",
     "AskRequest",
@@ -67,4 +72,5 @@ __all__ = [
     "OpenAIRequest",
     "RetrieveQuery",
     "RetrievedItem",
+    "RetrievalAugmentedResponse",
 ]

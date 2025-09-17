@@ -16,10 +16,15 @@ from app.schemas.embeddings import (
     OpenAIRequest,
     RetrieveQuery,
     RetrievedItem,
+    RetrievalAugmentedResponse,
 )
 from app.services.retrieval_service import (
     RetrievalService,
     get_retrieval_service,
+)
+from app.services.chat_completion_service import (
+    ChatCompletionService,
+    get_chat_completion_service,
 )
 
 router = APIRouter(prefix="/api", tags=["search"])
@@ -70,14 +75,15 @@ def call_openai(request: OpenAIRequest) -> dict:
     return response.json()
 
 
-@router.post("/search/retrieve", response_model=List[RetrievedItem])
+@router.post("/search/retrieve", response_model=RetrievalAugmentedResponse)
 def retrieve_images(
     request: RetrieveQuery,
     db: Session = Depends(get_db),
     retrieval_service: RetrievalService = Depends(get_retrieval_service),
-) -> List[RetrievedItem]:
+    chat_service: ChatCompletionService = Depends(get_chat_completion_service),
+) -> RetrievalAugmentedResponse:
     results = retrieval_service.retrieve(db=db, query=request.query, k=request.k)
-    return [
+    items = [
         RetrievedItem(
             id=result.metadata.id,
             url=result.metadata.url,
@@ -91,6 +97,10 @@ def retrieve_images(
         )
         for result in results
     ]
+
+    completion = chat_service.create_completion(query=request.query, items=items)
+
+    return RetrievalAugmentedResponse(items=items, completion=completion)
 
 
 __all__ = ["router"]
