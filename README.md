@@ -91,8 +91,8 @@ Backend available on `localhost:8000`.
 * [x] Micro-frontend integration (Angular + React + JWT auth).
 * [x] FastAPI backend with MinIO + pgvector.
 * [x] Image embeddings + OCR text embeddings.
-* [ ] ANN similarity search.
-* [ ] (WIP) Context composition with GPT-4o multimodal.
+* [x] ANN similarity search.
+* [x] Context composition with GPT-4o multimodal.
 * [ ] Text + image hybrid retrieval optimization.
-* [ ] Dashboard for query analytics.
+
 
