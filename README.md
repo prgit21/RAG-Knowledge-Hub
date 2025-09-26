@@ -7,7 +7,7 @@ A knowledge hub that lets users upload, search, and query across documents and i
 
 ---
 
-## 🚀 Features
+##  Features
 
 * **Micro-frontend architecture**: Angular + React unified via `single-spa`, JWT-protected routing, Nginx proxy.
 * **Multimodal chatbot**: Natural language + image queries through FastAPI REST endpoints.
@@ -25,7 +25,7 @@ A knowledge hub that lets users upload, search, and query across documents and i
 
 ---
 
-## 🔄 RAG Flow (Conceptual)
+##  RAG Flow (Conceptual)
 
 1. **Upload & Store**
 
@@ -59,7 +59,7 @@ A knowledge hub that lets users upload, search, and query across documents and i
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 * **Frontend**: Angular + React (micro-frontends, single-spa).
 * **Backend**: FastAPI REST services.
@@ -73,12 +73,12 @@ A knowledge hub that lets users upload, search, and query across documents and i
 
 ---
 
-## 📦 Getting Started
+##  Getting Started
 
 ```bash
 
 # Start docker services
-docker-compose up --build
+docker compose -f docker-compose.dev.yml up --build
 ```
 
 Frontend apps run on `localhost:9000` (root-config), `4201` (Angular), `4202` (React).
@@ -93,6 +93,6 @@ Backend available on `localhost:8000`.
 * [x] Image embeddings + OCR text embeddings.
 * [x] ANN similarity search.
 * [x] Context composition with GPT-4o multimodal.
-* [ ] Text + image hybrid retrieval optimization.
+* [x] Text + image hybrid retrieval optimization.
 
 
