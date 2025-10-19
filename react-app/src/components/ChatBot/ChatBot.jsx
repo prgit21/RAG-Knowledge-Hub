@@ -4,10 +4,33 @@ import { Box, Stack, Paper, List } from "@mui/material";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 
+const getApiBaseUrl = () => {
+  const runtimeConfig =
+    typeof window !== "undefined" ? window.__APP_CONFIG__ : undefined;
+  const runtimeUrl = runtimeConfig?.apiUrl;
+  const envUrl = process.env.REACT_APP_API_URL;
+
+  if (runtimeUrl && runtimeUrl.trim().length > 0) {
+    return runtimeUrl;
+  }
+
+  if (envUrl && envUrl.trim().length > 0) {
+    return envUrl;
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    return "http://localhost:8000";
+  }
+
+  console.warn(
+    "ChatBot API base URL is not configured. Set window.__APP_CONFIG__.apiUrl or REACT_APP_API_URL."
+  );
+  return "";
+};
+
 export default function ChatBot() {
   const [messages, setMessages] = useState([]);
-  // const apiBase = process.env.REACT_APP_API_URL || "http://localhost:8000";
-  const apiBase = "http://localhost:8000";
+  const apiBase = useMemo(getApiBaseUrl, []);
 
   const extractCompletionText = useCallback((payload) => {
     if (!payload) {
@@ -77,7 +100,7 @@ export default function ChatBot() {
         setMessages((prev) => [...prev, botMessage]);
       }
     },
-    [extractCompletionText]
+    [apiBase, extractCompletionText]
   );
 
   // Debounce to prevent rapid multiple API calls
@@ -192,7 +215,7 @@ export default function ChatBot() {
         setMessages((prev) => [...prev, botMessage]);
       }
     },
-    [extractCompletionText]
+    [apiBase, extractCompletionText]
   );
 
   // Cleanup on unmount
