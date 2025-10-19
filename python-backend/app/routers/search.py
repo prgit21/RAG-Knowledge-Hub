@@ -21,6 +21,7 @@ from app.schemas.embeddings import (
 )
 from app.services.retrieval_service import (
     RetrievalService,
+    RetrievalServiceError,
     get_retrieval_service,
 )
 from app.services.chat_completion_service import (
@@ -85,7 +86,11 @@ def retrieve_images(
     retrieval_service: RetrievalService = Depends(get_retrieval_service),
     chat_service: ChatCompletionService = Depends(get_chat_completion_service),
 ) -> RetrievalAugmentedResponse:
-    results = retrieval_service.retrieve(db=db, query=request.query, k=request.k)
+    try:
+        results = retrieval_service.retrieve(db=db, query=request.query, k=request.k)
+    except RetrievalServiceError as exc:
+        status_code = 400 if isinstance(exc.__cause__, ValueError) else 503
+        raise HTTPException(status_code=status_code, detail=str(exc)) from exc
     items = [
         RetrievedItem(
             id=result.metadata.id,

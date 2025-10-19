@@ -31,6 +31,10 @@ class RetrievalResult:
     similarities: Dict[str, float]
 
 
+class RetrievalServiceError(RuntimeError):
+    """Raised when the retrieval service cannot complete a request."""
+
+
 class RetrievalService:
     """Service that performs weighted blending across retrieval modalities."""
 
@@ -38,6 +42,7 @@ class RetrievalService:
         VISUAL_MODALITY: 0.6,
         OCR_MODALITY: 0.4,
     }
+    _MAX_K = 20
 
     def __init__(self, embedding_service: EmbeddingService) -> None:
         self._embedding_service = embedding_service
@@ -54,10 +59,24 @@ class RetrievalService:
         if k <= 0:
             return []
 
-        query_vector = self._embedding_service.encode_text(query)
+        normalized_query = query.strip()
+        if not normalized_query:
+            return []
+
+        try:
+            query_vector = self._embedding_service.encode_text(normalized_query)
+        except ValueError as exc:  # invalid user input
+            raise RetrievalServiceError(str(exc)) from exc
+        except Exception as exc:  # pragma: no cover - defensive guard
+            raise RetrievalServiceError("failed to encode query text") from exc
+
+        if not query_vector:
+            return []
+
         repository = ImageRepository(db)
 
-        pool_size = max(k * 2, k)
+        top_k = min(k, self._MAX_K)
+        pool_size = max(top_k * 2, top_k)
         visual_candidates = repository.search_by_embedding_vector(
             query_vector, limit=pool_size
         )
@@ -67,7 +86,7 @@ class RetrievalService:
 
         aggregated = self._merge_candidates(visual_candidates, text_candidates)
         results = self._rank_results(aggregated)
-        return results[:k]
+        return results[:top_k]
 
     def _merge_candidates(
         self,
@@ -170,5 +189,6 @@ def get_retrieval_service() -> RetrievalService:
 __all__ = [
     "RetrievalResult",
     "RetrievalService",
+    "RetrievalServiceError",
     "get_retrieval_service",
 ]

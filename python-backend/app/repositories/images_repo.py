@@ -44,6 +44,9 @@ class ImageRepository:
     ) -> List[tuple[ImageMetadata, float]]:
         """Return image rows ordered by visual embedding distance."""
 
+        if not vector:
+            return []
+
         distance = ImageMetadata.embedding.cosine_distance(vector)
         query = (
             self._session.query(ImageMetadata, distance.label("distance"))
@@ -60,6 +63,9 @@ class ImageRepository:
         self, vector: List[float], limit: int = 3
     ) -> List[tuple[ImageMetadata, float]]:
         """Return image rows ordered by OCR/text embedding distance."""
+
+        if not vector:
+            return []
 
         distance = ImageMetadata.text_embedding.cosine_distance(vector)
         query = (
