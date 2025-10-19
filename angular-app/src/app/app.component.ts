@@ -28,6 +28,19 @@ export class AppComponent implements OnInit {
     });
   }
 
+  private setAuthCookie(token: string): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+    const maxAgeSeconds = 30 * 60; // Align with backend default expiry of 30 minutes.
+    document.cookie = `authToken=${encodeURIComponent(token)}; Max-Age=${maxAgeSeconds}; Path=/; SameSite=Strict`;
+    try {
+      localStorage.setItem('authToken', token);
+    } catch (error) {
+      console.warn('Unable to persist auth token to localStorage.', error);
+    }
+  }
+
   ngOnInit() {
     this.apiService.getHelloMessage().subscribe(
       (data) => {
@@ -46,9 +59,9 @@ export class AppComponent implements OnInit {
       this.apiService.postLogin(firstName, password).subscribe({
         next: (response) => {
           if (response.access_token) {
-      localStorage.setItem('authToken', response.token);
-      navigateToUrl('/react');   // Redirect to the React parcel
-    }
+            this.setAuthCookie(response.access_token);
+            navigateToUrl('/react'); // Redirect to the React parcel
+          }
         },
         error: (error) => {
           console.error('Login failed:', error);

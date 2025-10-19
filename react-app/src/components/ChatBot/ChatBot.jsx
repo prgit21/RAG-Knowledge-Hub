@@ -3,6 +3,42 @@ import debounce from "lodash.debounce";
 import { Box, Stack, Paper, List } from "@mui/material";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
+import { navigateToUrl } from "single-spa";
+
+const AUTH_COOKIE_NAME = "authToken";
+
+const getAuthToken = () => {
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(
+      new RegExp(`(?:^|; )${AUTH_COOKIE_NAME}=([^;]+)`)
+    );
+    if (match) {
+      return decodeURIComponent(match[1]);
+    }
+  }
+
+  try {
+    const storedToken = localStorage.getItem(AUTH_COOKIE_NAME);
+    return storedToken || null;
+  } catch (err) {
+    // Ignore storage access errors.
+  }
+
+  return null;
+};
+
+const clearAuthTokenCookie = () => {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  document.cookie = `${AUTH_COOKIE_NAME}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  try {
+    localStorage.removeItem(AUTH_COOKIE_NAME);
+  } catch (err) {
+    // Ignore storage removal errors.
+  }
+};
 
 const getApiBaseUrl = () => {
   const runtimeConfig =
@@ -31,6 +67,35 @@ const getApiBaseUrl = () => {
 export default function ChatBot() {
   const [messages, setMessages] = useState([]);
   const apiBase = useMemo(getApiBaseUrl, []);
+
+  const handleUnauthorized = useCallback(() => {
+    clearAuthTokenCookie();
+    navigateToUrl("/");
+  }, []);
+
+  const authFetch = useCallback(
+    async (input, init = {}) => {
+      const token = getAuthToken();
+      const headers = new Headers(init.headers || {});
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+
+      const response = await fetch(input, {
+        ...init,
+        headers,
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        handleUnauthorized();
+        throw new Error("Unauthorized");
+      }
+
+      return response;
+    },
+    [handleUnauthorized]
+  );
 
   const extractCompletionText = useCallback((payload) => {
     if (!payload) {
@@ -73,7 +138,7 @@ export default function ChatBot() {
       setMessages((prev) => [...prev, userMessage]);
 
       try {
-        const response = await fetch(`${apiBase}/api/openai`, {
+        const response = await authFetch(`${apiBase}/api/openai`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ model: "gpt-4o-mini", input: text }),
@@ -100,7 +165,7 @@ export default function ChatBot() {
         setMessages((prev) => [...prev, botMessage]);
       }
     },
-    [apiBase, extractCompletionText]
+    [apiBase, extractCompletionText, authFetch]
   );
 
   // Debounce to prevent rapid multiple API calls
@@ -117,7 +182,7 @@ export default function ChatBot() {
       };
       setMessages((prev) => [...prev, userMessage]);
       try {
-        await fetch(`${apiBase}/api/upload-image`, {
+        await authFetch(`${apiBase}/api/upload-image`, {
           method: "POST",
           body: formData,
         });
@@ -130,7 +195,7 @@ export default function ChatBot() {
         setMessages((prev) => [...prev, botMessage]);
       }
     },
-    [apiBase]
+    [apiBase, authFetch]
   );
 
   const handleRetrieve = useCallback(
@@ -144,7 +209,7 @@ export default function ChatBot() {
       setMessages((prev) => [...prev, userMessage]);
 
       try {
-        const response = await fetch(`${apiBase}/api/search/retrieve`, {
+        const response = await authFetch(`${apiBase}/api/search/retrieve`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: text, k: 3 }),
@@ -215,7 +280,7 @@ export default function ChatBot() {
         setMessages((prev) => [...prev, botMessage]);
       }
     },
-    [apiBase, extractCompletionText]
+    [apiBase, extractCompletionText, authFetch]
   );
 
   // Cleanup on unmount

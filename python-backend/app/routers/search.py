@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.repositories.images_repo import EmbeddingRepository
+from app.core.security import get_current_user
 from app.schemas.embeddings import (
     EmbeddingOut,
     OpenAIRequest,
@@ -27,7 +28,9 @@ from app.services.chat_completion_service import (
     get_chat_completion_service,
 )
 
-router = APIRouter(prefix="/api", tags=["search"])
+router = APIRouter(
+    prefix="/api", tags=["search"], dependencies=[Depends(get_current_user)]
+)
 
 
 @router.post("/embeddings/demo", response_model=EmbeddingOut)

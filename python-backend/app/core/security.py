@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
@@ -16,7 +16,24 @@ from app.models.users import User
 from app.repositories.users_repo import UserRepository
 from app.utils.hashing import verify_password
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login", auto_error=False)
+
+
+def _resolve_token(request: Request, token: Optional[str] = Depends(oauth2_scheme)) -> str:
+    """Return the JWT from an Authorization header or the auth cookie."""
+
+    if token:
+        return token
+
+    cookie_token = request.cookies.get("authToken")
+    if cookie_token:
+        return cookie_token
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
@@ -39,7 +56,7 @@ def create_access_token(subject: str, expires_delta: Optional[timedelta] = None)
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+    token: str = Depends(_resolve_token), db: Session = Depends(get_db)
 ) -> User:
     settings = get_settings()
     credentials_exception = HTTPException(

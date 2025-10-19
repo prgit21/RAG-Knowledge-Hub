@@ -10,8 +10,11 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.images import ImageOut
 from app.services.image_ingest_service import get_image_ingest_service
+from app.core.security import get_current_user
 
-router = APIRouter(prefix="/api", tags=["images"])
+router = APIRouter(
+    prefix="/api", tags=["images"], dependencies=[Depends(get_current_user)]
+)
 
 
 def _vector_to_list(vector: Optional[Sequence[float]]) -> Optional[List[float]]:
