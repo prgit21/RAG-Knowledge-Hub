@@ -13,7 +13,7 @@ class Embedding(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     content = Column(String, nullable=True)
-    embedding = Column(Vector(3))
+    embedding = Column(Vector(512), nullable=False)
 
 
 __all__ = ["Embedding"]

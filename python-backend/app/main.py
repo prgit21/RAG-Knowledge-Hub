@@ -75,6 +75,27 @@ def init_database() -> None:
                 sa_text("ALTER TABLE images ADD COLUMN text_embedding vector(512)")
             )
 
+        try:
+            embedding_columns = inspector.get_columns("embeddings")
+        except NoSuchTableError:
+            embedding_columns = []
+        embedding_dimension = next(
+            (
+                getattr(column["type"], "dim", None)
+                or getattr(column["type"], "dimension", None)
+                for column in embedding_columns
+                if column["name"] == "embedding"
+            ),
+            None,
+        )
+        if embedding_dimension is not None and embedding_dimension != 512:
+            connection.execute(
+                sa_text("DROP INDEX IF EXISTS embeddings_embedding_hnsw_idx")
+            )
+            connection.execute(
+                sa_text("ALTER TABLE embeddings ALTER COLUMN embedding TYPE vector(512)")
+            )
+
     _schedule_hnsw_index_creation()
 
 
