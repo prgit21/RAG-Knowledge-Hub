@@ -84,6 +84,19 @@ docker compose -f docker-compose.dev.yml up --build
 Frontend apps run on `localhost:9000` (root-config), `4201` (Angular), `4202` (React).
 Backend available on `localhost:8000`.
 
+### Secure admin provisioning
+
+* Demo environments can opt-in to seed the `user/password` credentials by setting `CREATE_DEMO_USER=true` in the backend environment. Production deployments should leave this unset (default) to avoid installing test accounts.
+* To create real administrator accounts, use the FastAPI backend's CLI helper after exporting the required database environment variables:
+
+  ```bash
+  cd python-backend
+  CREATE_DEMO_USER=false DATABASE_URL=... JWT_SECRET=... \
+    python -m app.scripts.create_admin_user --username <admin> --password <strong-password>
+  ```
+
+  Omitting `--password` will prompt securely. The command hashes the password server-side and persists the user without exposing credentials in application logs.
+
 ---
 
 ## 📌 Roadmap

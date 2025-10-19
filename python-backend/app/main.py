@@ -154,6 +154,11 @@ def _ensure_hnsw_indexes() -> None:
 
 
 def init_default_user() -> None:
+    settings = get_settings()
+    if not settings.create_demo_user:
+        logger.info("Skipping demo user creation; CREATE_DEMO_USER is disabled.")
+        return
+
     session = SessionLocal()
     try:
         repository = UserRepository(session)

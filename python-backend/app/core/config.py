@@ -54,6 +54,7 @@ class Settings:
     openai_api_url: str = "https://api.openai.com/v1/responses"
     openai_chat_api_url: str = "https://api.openai.com/v1/chat/completions"
     openai_api_key: Optional[str] = None
+    create_demo_user: bool = False
 
 
 @lru_cache
@@ -78,6 +79,7 @@ def get_settings() -> Settings:
             "OPENAI_CHAT_API_URL", "https://api.openai.com/v1/chat/completions"
         ),
         openai_api_key=os.getenv("OPENAI_API_KEY"),
+        create_demo_user=_str_to_bool(os.getenv("CREATE_DEMO_USER"), False),
     )
 
 
