@@ -45,11 +45,12 @@ class Settings:
     jwt_secret: str
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
-    minio_endpoint: str = "localhost:9001"
-    minio_access_key: str = "minioadmin"
-    minio_secret_key: str = "minioadmin"
-    minio_bucket: str = "images"
-    minio_secure: bool = False
+    s3_access_key_id: Optional[str] = None
+    s3_secret_access_key: Optional[str] = None
+    s3_bucket: str = "images"
+    s3_region: Optional[str] = None
+    s3_endpoint_url: Optional[str] = None
+    s3_use_path_style: bool = False
     cors_origins: List[str] = field(default_factory=_get_cors_origins)
     openai_api_url: str = "https://api.openai.com/v1/responses"
     openai_chat_api_url: str = "https://api.openai.com/v1/chat/completions"
@@ -68,11 +69,12 @@ def get_settings() -> Settings:
         access_token_expire_minutes=int(
             os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
         ),
-        minio_endpoint=os.getenv("MINIO_ENDPOINT", "localhost:9001"),
-        minio_access_key=os.getenv("MINIO_ACCESS_KEY", "minioadmin"),
-        minio_secret_key=os.getenv("MINIO_SECRET_KEY", "minioadmin"),
-        minio_bucket=os.getenv("MINIO_BUCKET", "images"),
-        minio_secure=_str_to_bool(os.getenv("MINIO_SECURE"), False),
+        s3_access_key_id=os.getenv("S3_ACCESS_KEY_ID"),
+        s3_secret_access_key=os.getenv("S3_SECRET_ACCESS_KEY"),
+        s3_bucket=os.getenv("S3_BUCKET", "images"),
+        s3_region=os.getenv("S3_REGION"),
+        s3_endpoint_url=os.getenv("S3_ENDPOINT_URL"),
+        s3_use_path_style=_str_to_bool(os.getenv("S3_USE_PATH_STYLE"), False),
         cors_origins=_get_cors_origins(),
         openai_api_url=os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/responses"),
         openai_chat_api_url=os.getenv(

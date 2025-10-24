@@ -55,27 +55,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio:
-        condition: service_healthy
     ports: ["8000:8000"]
-
-  minio:
-    image: minio/minio
-    ports:
-      - "9001:9000"
-      - "9002:9001"
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
 
 
       #docker compose -f docker-compose.dev.yml up` for development with live reload
 
 volumes:
   postgres-data:
-  minio-data:

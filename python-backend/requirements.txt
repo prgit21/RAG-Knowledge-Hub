@@ -7,7 +7,7 @@ python-multipart
 psycopg2-binary
 SQLAlchemy
 pgvector
-minio
+boto3
 langchain
 langchain-openai
 openai
