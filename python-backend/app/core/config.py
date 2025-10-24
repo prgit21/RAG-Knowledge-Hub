@@ -70,11 +70,11 @@ def get_settings() -> Settings:
             os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
         ),
         s3_access_key_id=os.getenv("S3_ACCESS_KEY_ID"),
-        s3_secret_access_key=os.getenv("S3_SECRET_ACCESS_KEY"),
+        s3_secret_access_key=os.getenv("S3_ACCESS_KEY"),
         s3_bucket=os.getenv("S3_BUCKET", "images"),
         s3_region=os.getenv("S3_REGION"),
-        s3_endpoint_url=os.getenv("S3_ENDPOINT_URL"),
-        s3_use_path_style=_str_to_bool(os.getenv("S3_USE_PATH_STYLE"), False),
+        # s3_endpoint_url=os.getenv("S3_ENDPOINT_URL"),
+        # s3_use_path_style=_str_to_bool(os.getenv("S3_USE_PATH_STYLE"), False),
         cors_origins=_get_cors_origins(),
         openai_api_url=os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/responses"),
         openai_chat_api_url=os.getenv(
